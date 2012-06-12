@@ -323,7 +323,16 @@ class Clicker {
 		clickOnScreen(waiter.waitForAndGetView(index, viewClass));
 	}
 
-
+	/**
+	 * Clicks on a {@code View} of a specific class, with a certain ID.
+	 *
+	 * @param viewClass what kind of {@code View} to click, e.g. {@code Button.class} or {@code ImageView.class}
+	 * @param id The ID of the view to click on.
+	 */
+	public <T extends View> void clickOn(Class<T> viewClass, int id) {
+		clickOnScreen(waiter.waitForAndGetView(index, viewClass));
+	}
+	
 	/**
 	 * Clicks on a certain list line and returns the {@link TextView}s that
 	 * the list line is showing. Will use the first list it finds.

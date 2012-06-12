@@ -36,7 +36,7 @@ import android.app.Instrumentation.ActivityMonitor;
  * When writing tests there is no need to plan for or expect new activities in the test case. 
  * All is handled automatically by Robotium-Solo. Robotium-Solo can be used in conjunction with
  * ActivityInstrumentationTestCase2. The test cases are written from a user
- * perspective were technical details are not needed.
+ * perspective where technical details are not needed.
  * 
  *
  * Example of usage (test case spanning over multiple activities):
@@ -695,6 +695,27 @@ public class Solo {
 	public void clickOnImageButton(int index) {
 		clicker.clickOn(ImageButton.class, index);
 	}
+	
+	/**
+	 * CLicks on an ImageButton with a given ID
+	 * 
+	 * @param id the id of the {@link ImageButton} to be clicked. Often found in the 'R' static class.
+	 */
+	
+	public void clickOnImageButtonWithID(int id) {
+		//TODO: search the view hierarchy for the view with the specified ID
+	}
+	
+	/**
+	 * Clicks on an ImageButton with a given accessibility description.
+	 * 
+	 * @param accessibilityTag The text in the 'contentDescription' of the button we are searching for.
+	 */
+	
+	public void clickOnImageButtonWithTag(String accessibilityTag) {
+		//TODO: search view hierarchy for view with accessibility tag
+	}
+	
 	
 	/**
 	 * Clicks on a ToggleButton with a given text.
