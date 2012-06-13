@@ -1,12 +1,19 @@
 package com.jayway.android.robotium.solo;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 import junit.framework.Assert;
 import android.app.Instrumentation;
+import android.graphics.Bitmap;
+import android.os.Environment;
+import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
 import android.widget.TextView;
@@ -16,6 +23,8 @@ class RobotiumUtils {
 	
 	private final Instrumentation inst;
 	private final Sleeper sleeper;
+	private final ActivityUtils activityUtils;
+	private final String LOG_TAG = "Robotium";
 
     /**
 	 * Constructs this object.
@@ -24,8 +33,9 @@ class RobotiumUtils {
      * @param sleeper the {@code Sleeper} instance.
      */
 	
-	public RobotiumUtils(Instrumentation inst, Sleeper sleeper) {
+	public RobotiumUtils(Instrumentation inst, ActivityUtils activityUtils, Sleeper sleeper) {
 		this.inst = inst;
+		this.activityUtils = activityUtils;
         this.sleeper = sleeper;
     }
    
@@ -150,5 +160,44 @@ class RobotiumUtils {
 			}
 		}	
 		return uniqueTextViews.size();		
+	}
+	
+	/**
+	 * Takes a screenshot and saves it in "/sdcard/Robotium-Screenshots/". 
+	 * Requires write permission (android.permission.WRITE_EXTERNAL_STORAGE) in AndroidManifest.xml of the application under test.
+	 *
+	 */
+
+	public void takeScreenshot(final View view) {
+		activityUtils.getCurrentActivity(false).runOnUiThread(new Runnable() {
+
+			@Override
+			public void run() {
+				if(view !=null){
+					view.destroyDrawingCache();
+					view.buildDrawingCache(false);
+					Bitmap b = view.getDrawingCache();
+					FileOutputStream fos = null;
+					SimpleDateFormat sdf = new SimpleDateFormat("ddMMyy-hhmmss");
+					String fileName = sdf.format( new Date()).toString()+ ".jpg";
+					File directory = new File(Environment.getExternalStorageDirectory() + "/Robotium-Screenshots/");
+					directory.mkdir();
+
+					File fileToSave = new File(directory,fileName);
+					try {
+						fos = new FileOutputStream(fileToSave);
+						if (b.compress(Bitmap.CompressFormat.JPEG, 100, fos) == false)
+							Log.d(LOG_TAG, "Compress/Write failed");
+						fos.flush();
+						fos.close();
+					} catch (Exception e) {
+						Log.d(LOG_TAG, "Can't save the screenshot! Requires write permission (android.permission.WRITE_EXTERNAL_STORAGE) in AndroidManifest.xml of the application under test.");
+						e.printStackTrace();
+					}
+					view.destroyDrawingCache();
+				}
+			}
+
+		});
 	}
 }

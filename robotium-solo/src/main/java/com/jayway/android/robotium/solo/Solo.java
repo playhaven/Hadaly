@@ -117,10 +117,10 @@ public class Solo {
         this.getter = new Getter(activityUtils, viewFetcher, waiter);
         this.asserter = new Asserter(activityUtils, waiter);
         this.checker = new Checker(viewFetcher, waiter);
-        this.robotiumUtils = new RobotiumUtils(instrumentation, sleeper);
-        this.clicker = new Clicker(viewFetcher, scroller,robotiumUtils, instrumentation, sleeper, waiter);
+        this.robotiumUtils = new RobotiumUtils(instrumentation,activityUtils, sleeper);
+        this.clicker = new Clicker(activityUtils, viewFetcher, scroller,robotiumUtils, instrumentation, sleeper, waiter);
         this.presser = new Presser(clicker, instrumentation, sleeper, waiter);
-        this.textEnterer = new TextEnterer(instrumentation, clicker);
+        this.textEnterer = new TextEnterer(instrumentation, activityUtils, clicker);
 	}
 
 	
@@ -848,10 +848,9 @@ public class Solo {
 	 * Clicks on a View displaying a given text. Will automatically scroll when needed.
 	 *
 	 * @param text the text that should be clicked. The parameter will be interpreted as a regular expression
-	 * @param match the match of the text that should be clicked
+	 * @param match if multiple objects match the text, this determines which one will be clicked
 	 *
 	 */
-	
 	public void clickOnText(String text, int match) {
 		clicker.clickOnText(text, false, match, true, 0);
 	}
@@ -860,7 +859,7 @@ public class Solo {
 	 * Clicks on a View displaying a given text.
 	 *
 	 * @param text the text that should be clicked on. The parameter will be interpreted as a regular expression
-	 * @param match the match of the text that should be clicked
+	 * @param match if multiple objects match the text, this determines which one will be clicked
 	 * @param scroll true if scrolling should be performed
 	 *
 	 */
@@ -888,7 +887,7 @@ public class Solo {
 	 * used to click on the context menu items that appear after the long click.
 	 *
 	 * @param text the text that should be clicked. The parameter will be interpreted as a regular expression
-	 * @param match the match of the text that should be clicked 
+	 * @param match if multiple objects match the text, this determines which one will be clicked
 	 *
 	 */
 	
@@ -902,7 +901,7 @@ public class Solo {
 	 * used to click on the context menu items that appear after the long click.
 	 *
 	 * @param text the text that should be clicked. The parameter will be interpreted as a regular expression
-	 * @param match the match of the text that should be clicked
+	 * @param match if multiple objects match the text, this determines which one will be clicked
 	 * @param scroll true if scrolling should be performed
 	 *
 	 */
@@ -917,7 +916,7 @@ public class Solo {
 	 * used to click on the context menu items that appear after the long click.
 	 *
 	 * @param text the text that should be clicked. The parameter will be interpreted as a regular expression
-	 * @param match the match of the text that should be clicked 
+	 * @param match if multiple objects match the text, this determines which one will be clicked
 	 * @param time the amount of time to long click 
 	 */
 	
@@ -1047,6 +1046,15 @@ public class Solo {
 	 */
 	public ArrayList<TextView> clickLongInList(int line, int index, int time){
 		return clicker.clickInList(line, index, true, time);
+	}
+	
+	/**
+	 * Clicks on an ActionBar item with a given resource id.
+	 * 
+	 * @param resourceId the R.id of the ActionBar item
+	 */
+	public void clickOnActionBarItem(int resourceId){
+		clicker.clickOnActionBarItem(resourceId);
 	}
 	
 
@@ -1463,7 +1471,7 @@ public class Solo {
 	
 	
 	/**
-	 * Returns a View with a given id. 
+	 * Returns a View with a given resource id. 
 	 * 
 	 * @param id the R.id of the {@link View} to be returned 
 	 * @return a {@link View} with a given id
@@ -1930,7 +1938,7 @@ public class Solo {
 	/**
 	 * Returns a localized string.
 	 * 
-	 * @param resId the resource ID for the string
+	 * @param resId the resource id of the string
 	 * @return the localized string
 	 *
 	 */
@@ -1981,6 +1989,17 @@ public class Solo {
 	
 	public void finishOpenedActivities(){
 		activityUtils.finishOpenedActivities();
+	}
+	
+	/**
+	 * Takes a screenshot and saves it in "/sdcard/Robotium-Screenshots/". 
+	 * Requires write permission (android.permission.WRITE_EXTERNAL_STORAGE) in AndroidManifest.xml of the application under test.
+	 *
+	 */
+	
+	public void takeScreenshot(){
+		View decorView = viewFetcher.getRecentDecorView(viewFetcher.getWindowDecorViews());
+		robotiumUtils.takeScreenshot(decorView);
 	}
 	
 }
