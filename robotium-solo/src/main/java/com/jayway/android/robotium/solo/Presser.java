@@ -1,9 +1,9 @@
 package com.jayway.android.robotium.solo;
 
-import android.widget.Spinner;
 import junit.framework.Assert;
 import android.app.Instrumentation;
 import android.view.KeyEvent;
+import android.widget.Spinner;
 
 /**
  * Contains press methods. Examples are pressMenuItem(),
