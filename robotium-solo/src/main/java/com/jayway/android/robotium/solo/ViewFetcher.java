@@ -4,10 +4,9 @@ import java.lang.ref.WeakReference;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 import android.app.Activity;
-import android.graphics.PointF;
 import android.view.View;
 import android.view.ViewGroup;
-import android.webkit.WebView;
+import android.widget.TextView;
 
 /**
  * Main class for fetching views from the activity. 
@@ -23,6 +22,15 @@ class ViewFetcher {
 		
 	public ViewFetcher(Activity activity) {
 		mActivity = new WeakReference<Activity>(activity);
+	}
+	
+	
+	public void setActivity(Activity activity) {
+		mActivity = new WeakReference<Activity>(activity);
+	}
+	
+	public Activity getActivity() {
+		return mActivity.get();
 	}
 	
 	/**
@@ -43,7 +51,8 @@ class ViewFetcher {
 		ConcurrentLinkedQueue<View> viewChildren = new ConcurrentLinkedQueue<View>();
 		
 		View curView = null;
-		viewChildren.add(getRootView());
+		View rootView = getRootView();
+		viewChildren.add(rootView);
 		
 		Selector curSelector = selector; 
 		
@@ -84,14 +93,66 @@ class ViewFetcher {
 			
 		}
 		
+		//TODO: might no necessarily be the right one?
 		return curView;
 	}
 	
+	public boolean testMatchViewSelector(View view, Selector selector) {
+		return matchViewSelector(view, selector);
+	}
 	
+	/**
+	 * Matches a single element selector against a view. We always make sure to check
+	 * via a "fail first" policy so that we can exit quickly.
+	 * TODO: should we be using "findViewById"?
+	 * @param view The view to match against
+	 * @param selector The selector we are checking for a match
+	 * @return
+	 */
 	private boolean matchViewSelector(View view, Selector selector) {
-		// TODO: actually match each element against the view selector
-		// TODO: check hint, check description, check tag, check text, check int id, check accessibility label
-		return false;
+		// check the following:
+		// class
+		// text (if it exists)
+		// tag
+		// integer ID
+		// accessibility description
+		
+		if (selector.getClasses().size() != 0)
+			if ( ! selector.getClasses().contains(view.getClass().getSimpleName()))
+				return false;
+			
+		if (selector.getIntegerID() != -1) // if we've specified an ID, check to make sure view matches
+			
+			if (view.getId() != selector.getIntegerID()) 
+				return false;
+		
+		if (selector.hasAttribute(Selector.Attribute.Tag.toString())) // if we've specified a tag, check to make sure view matches
+			
+			if ( ! selector.getAttribute(Selector.Attribute.Tag.toString())
+								.equals(view.getTag())) 
+				return false;
+		
+		if (selector.hasAttribute(Selector.Attribute.ContentDescription.toString())) // if selector filters by "contentDescription", check view matches
+			
+			if ( ! selector.getAttribute(Selector.Attribute.ContentDescription.toString())
+										.equalsIgnoreCase(
+													(view.getContentDescription() != null    ?
+													 view.getContentDescription().toString() :
+													 null)
+													)) 
+				return false;
+		
+		if (selector.hasAttribute(Selector.Attribute.Text.toString())) // if we filter by text, make sure the view matches
+			
+			if (view instanceof TextView)
+				if ( ! selector.getAttribute(Selector.Attribute.Text.toString())
+									.equalsIgnoreCase(
+												((TextView)view).getText().toString()))
+					return false;
+		
+		// TODO: check for *all* attributes via reflection
+		
+		return true;
 	}
 	
 	public View getRootView() {

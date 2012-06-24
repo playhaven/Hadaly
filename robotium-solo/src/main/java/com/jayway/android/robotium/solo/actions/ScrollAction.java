@@ -1,8 +1,8 @@
 package com.jayway.android.robotium.solo.actions;
 
 import android.app.Activity;
-import android.app.Instrumentation;
 import android.graphics.PointF;
+import android.test.InstrumentationTestCase;
 import android.view.View;
 
 /**
@@ -21,7 +21,7 @@ public class ScrollAction implements Action {
 	}
 
 	@Override
-	public void doAction(Activity activity, Instrumentation inst, View view) {
+	public void doAction(Activity activity, InstrumentationTestCase testCase, View view) {
 		// TODO Auto-generated method stub
 		// view.setSelection(lineToMoveTo);
 		// .scrollBy, .smoothScrollBy

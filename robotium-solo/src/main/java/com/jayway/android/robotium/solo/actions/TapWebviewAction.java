@@ -5,10 +5,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import junit.framework.Assert;
 import android.app.Activity;
-import android.app.Instrumentation;
+import android.content.Context;
 import android.graphics.PointF;
 import android.graphics.RectF;
 import android.os.ConditionVariable;
+import android.test.InstrumentationTestCase;
 import android.view.View;
 import android.webkit.WebView;
 
@@ -31,6 +32,65 @@ public class TapWebviewAction extends TapAction implements Action {
 		mSelector = selector;
 	}
 	
+	/**
+	 * Simple wrapper class which allows us to fake
+	 * the width/height/offset so that the TouchUtils class
+	 * taps on the appropriate *part* of the webview (right over
+	 * HTML element we want to tap). Bit tricky and hacky but better
+	 * than rewriting all of our own .sendPointerSync(event) code...
+	 * @author samstewart
+	 *
+	 */
+	private class WebViewWrapper extends WebView {
+
+		private WebView mWebview;
+		
+		private RectF mSubRegion;
+		
+		public WebViewWrapper(Context context) {
+			super(context);
+			
+		}
+		
+		public WebViewWrapper(WebView webview, RectF subRegion) {
+			super(webview.getContext());
+			
+			mWebview = webview;
+			mSubRegion = subRegion;
+			
+			// no padding because we want measuredWidth/Height to match
+			// width/height
+			this.setPadding(0, 0, 0, 0); 
+		}
+		
+		@Override
+		public void getLocationOnScreen(int[] xy) {
+			int[] totalXY = new int[2];
+			
+			super.getLocationOnScreen(totalXY);
+			
+			// add the sub region offset
+			totalXY[0] += mSubRegion.left;
+			totalXY[1] += mSubRegion.top;
+		}
+		
+		@Override
+		public void onMeasure(int widthMeasure, int heightMeasure) {
+			// we need to pretend the view's real size is the subregion
+			
+			int totalWidth = super.getWidth();
+			// shrink down to subregion (both sides of subregion)
+			totalWidth = totalWidth - (int)mSubRegion.left - (int)mSubRegion.width();
+			
+			int totalHeight = super.getHeight();
+			// shrink down to subregion (both top and bottom of subregion)
+			totalHeight = totalHeight - (int)mSubRegion.top - (int)mSubRegion.height();
+			
+			
+			setMeasuredDimension(totalWidth, totalHeight);
+		}
+		
+	}
 	@Override
 	public void setView(View view) {
 		// pass
@@ -38,16 +98,15 @@ public class TapWebviewAction extends TapAction implements Action {
 	}
 
 	@Override
-	public void doAction(Activity activity, Instrumentation inst, View view) {
+	public void doAction(Activity activity, InstrumentationTestCase testCase, View view) {
 		Assert.assertEquals(WebView.class, view.getClass());
 		
 		fetcher = new WebViewFetcher((WebView)view);
 		
-		
+		//TODO: actually send a tap event to the x/y coordinate since we are tapping on elements *within* the view
 		
 	}
-
-	@Override
+	
 	protected RectF getViewFrameOnScreen(View view) {
 		RectF elementFrame = new RectF(Float.MAX_VALUE, 
 				  					   Float.MAX_VALUE, 

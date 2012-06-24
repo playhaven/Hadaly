@@ -37,6 +37,23 @@ public class Selector {
 	
 	private String stringID				    = "";
 	
+	public static enum Attribute {
+		Tag("tag"),
+		Text("text"),
+		ContentDescription("contentDescription");
+		
+		private String key;
+		
+		private Attribute(String key) {
+			this.key = key;
+		}
+		
+		@Override
+		public String toString() {
+			return key;
+		}
+	}
+	
 	private HashMap<String, String> attributes = new HashMap<String, String>();
 	
 	private ArrayList<String> classes 		= new ArrayList<String>();
@@ -111,8 +128,7 @@ public class Selector {
 					
 		// build keys 
 		while (matcher.find()) {
-			String key = matcher.group(1);
-			
+			String key = matcher.group(1);			
 			String value = matcher.group(2).replace("_", " ");
 			
 			System.out.println("Key: " + key + " Value: " + value);
@@ -131,16 +147,19 @@ public class Selector {
 	private void parseSelectorHierarchy(String fullSelector) {
 		
 		// pop front selector off, parse, and then recursively parse remainder
-		curSelector = (fullSelector.indexOf(" ") != -1 				 ? 
-					   fullSelector.substring(0, fullSelector.indexOf(" ")) : 
+		curSelector = (fullSelector.indexOf(CHILD_SEPARATOR) != -1 				 		? 
+					   fullSelector.substring(0, fullSelector.indexOf(CHILD_SEPARATOR)) : 
 					   fullSelector);
 		
-		System.out.println("Cur Selector: "+curSelector);
+		System.out.println("Cur Selector: " + curSelector);
 		
 		parseSelector(curSelector);
 		
 		// parse remainder of the string
-		if (fullSelector.indexOf(" ") != -1) child = new Selector(fullSelector.substring(fullSelector.indexOf(" ") + 1)); 
+		if (fullSelector.indexOf(CHILD_SEPARATOR) != -1) child = new Selector(
+																	fullSelector.substring(
+																			fullSelector.indexOf(CHILD_SEPARATOR) + 1)
+																						  ); 
 	}
 	
 	///////////////////////////////////////////////
@@ -162,6 +181,13 @@ public class Selector {
 		return attributes;
 	}
 	
+	public String getAttribute(String attribute) {
+		return attributes.get(attribute);
+	}
+	
+	public boolean hasAttribute(String attribute) {
+		return attributes.containsKey(attribute);
+	}
 	public Selector getChild() {
 		return child;
 	}

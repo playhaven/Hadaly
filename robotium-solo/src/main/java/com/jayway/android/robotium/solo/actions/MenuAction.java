@@ -1,7 +1,7 @@
 package com.jayway.android.robotium.solo.actions;
 
 import android.app.Activity;
-import android.app.Instrumentation;
+import android.test.InstrumentationTestCase;
 import android.view.View;
 
 public class MenuAction implements Action {
@@ -18,7 +18,7 @@ public class MenuAction implements Action {
 	}
 
 	@Override
-	public void doAction(Activity activity, Instrumentation inst, View view) {
+	public void doAction(Activity activity, InstrumentationTestCase testCase, View view) {
 		// TODO: show the menu then press the item matching the selector
 		
 	}

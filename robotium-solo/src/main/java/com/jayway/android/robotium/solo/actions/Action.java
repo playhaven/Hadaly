@@ -1,7 +1,7 @@
 package com.jayway.android.robotium.solo.actions;
 
 import android.app.Activity;
-import android.app.Instrumentation;
+import android.test.InstrumentationTestCase;
 import android.view.View;
 
 /**
@@ -17,5 +17,5 @@ import android.view.View;
  */
 public interface Action {
 	public void setView(View view);
-	public void doAction(Activity activity, Instrumentation inst, View view);
+	public void doAction(Activity activity, InstrumentationTestCase testCase, View view);
 }

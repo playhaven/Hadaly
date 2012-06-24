@@ -1,8 +1,8 @@
 package com.jayway.android.robotium.solo.actions;
 
 import android.app.Activity;
-import android.app.Instrumentation;
 import android.graphics.PointF;
+import android.test.InstrumentationTestCase;
 import android.view.View;
 
 /**
@@ -23,7 +23,7 @@ public class DragAction implements Action {
 	}
 
 	@Override
-	public void doAction(Activity activity, Instrumentation inst, View view) {
+	public void doAction(Activity activity, InstrumentationTestCase testCase, View view) {
 		// TODO Actually perform a drag motion on the view
 
 	}

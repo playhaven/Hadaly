@@ -2,9 +2,12 @@ package com.jayway.android.robotium.solo;
 
 import junit.framework.Assert;
 import android.app.Activity;
-import android.app.Instrumentation;
+import android.test.InstrumentationTestCase;
 import android.view.KeyEvent;
 import android.view.View;
+
+import com.jayway.android.robotium.solo.actions.Actions;
+import com.jayway.android.robotium.solo.actions.ActivityWatcher;
 
 /**
  * Main utility class for running UI tests.
@@ -19,6 +22,17 @@ import android.view.View;
  * 1. Add support for clicking on menu items
  * 2. Add support for scrolling list views
  * 3. Add support for spinners, and other abnormal UI elements
+ * 4. Add to documentation ViewAsserts and MoreAsserts
+ * 5. Add support for Activity monitoring
+ * 6. Add more support for TouchUtils
+ * 7. Waiting for views (startActivitySync, idleSync)
+ * 8. Testing across activities (startActivitySync, ActivityMonitor)[http://stackoverflow.com/questions/1759626/how-do-you-test-an-android-application-across-multiple-activities]
+ * 9. Some pitfals (http://codetrips.blogspot.com/2010/06/unit-testing-android-activity.html)
+ * 10. Some general testing guidelines: http://stackoverflow.com/questions/522312/best-practices-for-unit-testing-android-apps
+ * 11. Use more ViewAsserts
+ * 12. Far more assertions *within* the testing framework
+ * 13. Use activity monitor to close all activities (multiple levels)
+ * 14. Use 'startInstrumentation' to avoid test project overhead
  * @author Sam Stewart
  *
  */
@@ -26,12 +40,12 @@ import android.view.View;
 public class Hadaly {
 
 	private ViewFetcher mViewSearcher;
-		
+	
 	private Screenshotter   mScreenshotter;
 	
-	private Instrumentation mInstrumentation;
+	private InstrumentationTestCase mTestCase;
 	
-	private Activity 		mActivity;
+	private ActivityWatcher mActivityWatcher;
 	
 	private static int mWaitTime = 500; // standard time to wait in between actions, etc.
 	
@@ -39,14 +53,17 @@ public class Hadaly {
 	
 	protected final int SMALLTIMEOUT = 10000;
 	
+	protected final int ACTIVITY_WAIT_TIMEOUT = 1000;
+	
 	public final static String LOGGING_TAG = "[Hadaly]";
+	
+	
 
-
-	public Hadaly(Instrumentation instrumentation, Activity activity) {
-        mInstrumentation = instrumentation;
-        mActivity = activity;
-        mViewSearcher = new ViewFetcher(activity);
-        mScreenshotter = new Screenshotter();
+	public Hadaly(InstrumentationTestCase testCase, Activity activity) {
+        mTestCase = testCase;
+        mViewSearcher 	 = new ViewFetcher(activity);
+        mScreenshotter	 = new Screenshotter();
+        mActivityWatcher = new ActivityWatcher(testCase.getInstrumentation(), activity);
 	}
 
 
@@ -65,51 +82,104 @@ public class Hadaly {
 	
 	
 	public void goBack() {
+		Assert.assertNotNull(mTestCase);
 		
 		try {
-			Thread.sleep(mWaitTime);
-			mInstrumentation.sendKeyDownUpSync(KeyEvent.KEYCODE_BACK);
+			sleep(mWaitTime);
 			
-			Thread.sleep(mWaitTime);
+			Actions.sendKeycodeAction(KeyEvent.KEYCODE_BACK).doAction(mActivityWatcher.getRootActivity(), mTestCase, null);
+			
+			sleep(mWaitTime);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 	}
 	
-	
-	public void tap(String selector) {
-		Assert.assertNotNull(selector);
-		
-		Selector select = new Selector(selector);
-		
-		Assert.assertNotNull(select);
-		
-		View view = mViewSearcher.getView(select);
-		
-		Assert.assertNotNull(view);
-		
-		//TODO: actually tap the view
+	public void tearDown() {
+		mActivityWatcher.closeAllActivities();
 	}
 	
-	public void enterText(String selector, String text) {
-		Assert.assertNotNull(selector);
-		
-		Selector select = new Selector(selector);
-		
-		Assert.assertNotNull(select);
-		
-		View view = mViewSearcher.getView(select);
-		
-		Assert.assertNotNull(view);
-		
+	
+	public void closeCurrentActivity() {
+		mActivityWatcher.closeCurrentActivity();
 	}
 
 	
+	/**
+	 * Attempts to tap an HTML element in the specified webview
+	 * @param webviewSelector The selector for the WebView in the view hierarchy
+	 * @param htmlSelector The selector *within* the WebView's HTML content
+	 */
+	public void tapInWebview(String webviewSelector, String htmlSelector) {
+		// TODO: tap in the webview on the specific element
+	}
+	
+	public void tap(String selector) {
+		Assert.assertNotNull(mTestCase);
+			
+		//TODO: needs to timeout if it can't find the element
+		Assert.assertNotNull(selector);
+		
+		Selector select = new Selector(selector);
+		
+		Assert.assertNotNull(select);
+		
+		mViewSearcher.setActivity(mActivityWatcher.getCurrentActivity());
+		
+		View view = mViewSearcher.getView(select);
+		
+		Assert.assertNotNull(view);
+		
+		Actions.tapAction().doAction(mActivityWatcher.getCurrentActivity(), mTestCase, view);
+	}
+	
+	public void enterText(String selector, String text) {
+		Assert.assertNotNull(mTestCase);
+		
+		Assert.assertNotNull(selector);
+		
+		Selector select = new Selector(selector);
+		
+		Assert.assertNotNull(select);
+		
+		mViewSearcher.setActivity(mActivityWatcher.getCurrentActivity());
+		
+		View view = mViewSearcher.getView(select);
+		
+		Assert.assertNotNull(view);
+		
+		Actions.enterTextAction(text).doAction(mActivityWatcher.getCurrentActivity(), mTestCase, view);
+		
+		Assert.assertNotNull(view);
+		
+	}
+	
+	public void waitForNewActivityToShow() {
+		mActivityWatcher.waitForNewActivity();
+	}
+	
+	public void sleep(int time) {
+		try {
+			Thread.sleep(time);
+			
+		} catch (Exception e) {
+			e.printStackTrace();
+			Assert.fail(e.getMessage());
+		}
+	}
+	
+	public void assertActivityShowing(Class<? extends Activity> activityClass) {
+		mActivityWatcher.assertActivityShowing(activityClass);
+	}
+	
+	public void setOrientation(int orientation) {
+		mActivityWatcher.getCurrentActivity().setRequestedOrientation(orientation);
+	}
+	
 	public void takeScreenshot() {
-		if (mActivity == null) return;
+		Assert.assertNotNull(mScreenshotter);
 		
-		mScreenshotter.takeScreenshot(mActivity);
-		
+		mScreenshotter.takeScreenshot(mActivityWatcher.getCurrentActivity());
 	}
 	
 }

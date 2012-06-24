@@ -1,7 +1,7 @@
 package com.jayway.android.robotium.solo.actions;
 
 import android.app.Activity;
-import android.app.Instrumentation;
+import android.test.InstrumentationTestCase;
 import android.view.View;
 
 public class SendKeyCodeAction implements Action {
@@ -19,9 +19,9 @@ public class SendKeyCodeAction implements Action {
 	}
 
 	@Override
-	public void doAction(Activity activity, Instrumentation inst, View view) {
-		// inst.sendCharacterSync(keycode);
+	public void doAction(Activity activity, InstrumentationTestCase testCase, View view) {
 		
+		testCase.getInstrumentation().sendKeyDownUpSync(mKeycode);
 	}
 
 }
