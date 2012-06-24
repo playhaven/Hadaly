@@ -29,6 +29,8 @@ public class ActivityWatcher {
 	
 	private final int		ACTIVITY_REFRESH_INTERVAL = 50;
 	
+	private final int 		ACTIVITY_WAIT_TIMEOUT 	  = 3000;
+	
 	private TimerTask		mActivityRefresh = new TimerTask() {
 		@Override
 		public void run() {
@@ -88,9 +90,12 @@ public class ActivityWatcher {
 	}
 	
 	public void waitForNewActivity() {
-		// TODO: wait for the next activity properly (we just sleep now)
-		// TODO: also make assertions
-		sleep(2000);
+		// TODO: check to make sure we actually got a new activity (check hit count)
+		Activity newActivity = mActivityMonitor.waitForActivityWithTimeout(ACTIVITY_WAIT_TIMEOUT);
+		
+		Assert.assertNotNull(newActivity);
+		
+		mActivityHistory.push(newActivity);
 	}
 	
 	public void sleep(int time) {
