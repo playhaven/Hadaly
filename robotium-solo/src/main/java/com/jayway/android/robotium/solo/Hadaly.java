@@ -115,8 +115,15 @@ public class Hadaly {
 	}
 	
 	public void tap(String selector) {
+		View view = attemptGetView(selector);
+		
+		if (view != null)
+			Actions.tapAction().doAction(mActivityWatcher.getCurrentActivity(), mTestCase, view);
+	}
+	
+	private View attemptGetView(String selector) {
 		Assert.assertNotNull(mTestCase);
-			
+		
 		//TODO: needs to timeout if it can't find the element
 		Assert.assertNotNull(selector);
 		
@@ -130,27 +137,16 @@ public class Hadaly {
 		
 		Assert.assertNotNull(view);
 		
-		Actions.tapAction().doAction(mActivityWatcher.getCurrentActivity(), mTestCase, view);
+		Assert.assertTrue(view.isShown());
+		
+		return view;
 	}
 	
 	public void enterText(String selector, String text) {
-		Assert.assertNotNull(mTestCase);
+		View view = attemptGetView(selector);
+		if (view != null)
+			Actions.enterTextAction(text).doAction(mActivityWatcher.getCurrentActivity(), mTestCase, view);
 		
-		Assert.assertNotNull(selector);
-		
-		Selector select = new Selector(selector);
-		
-		Assert.assertNotNull(select);
-		
-		mViewSearcher.setActivity(mActivityWatcher.getCurrentActivity());
-		
-		View view = mViewSearcher.getView(select);
-		
-		Assert.assertNotNull(view);
-		
-		Actions.enterTextAction(text).doAction(mActivityWatcher.getCurrentActivity(), mTestCase, view);
-		
-		Assert.assertNotNull(view);
 		
 	}
 	

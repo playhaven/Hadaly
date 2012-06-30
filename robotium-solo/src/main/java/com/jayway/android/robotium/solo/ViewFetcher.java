@@ -46,11 +46,13 @@ class ViewFetcher {
 		// getDrawingTime
 		// getLocationOnScreen
 		// view.isShown()
+		// TODO: should we check to make sure it's shown?
 		
 		// breadth first search
 		ConcurrentLinkedQueue<View> viewChildren = new ConcurrentLinkedQueue<View>();
 		
 		View curView = null;
+		View matchedView = null;
 		View rootView = getRootView();
 		viewChildren.add(rootView);
 		
@@ -64,8 +66,10 @@ class ViewFetcher {
 				
 				if (curSelector.hasChild())
 					curSelector = curSelector.getChild();
-				else
-					break; // we've found a match, stop the loop
+				else {
+					matchedView = curView; // we've found a match
+					break;
+				}
 			}
 			
 			if (curView instanceof ViewGroup) {
@@ -93,8 +97,7 @@ class ViewFetcher {
 			
 		}
 		
-		//TODO: might no necessarily be the right one?
-		return curView;
+		return matchedView;
 	}
 	
 	public boolean testMatchViewSelector(View view, Selector selector) {
