@@ -1,19 +1,14 @@
 package com.jayway.android.robotium.solo.actions;
 
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
-
 import junit.framework.Assert;
 import android.app.Activity;
 import android.content.Context;
 import android.graphics.PointF;
 import android.graphics.RectF;
-import android.os.ConditionVariable;
 import android.test.InstrumentationTestCase;
+import android.test.TouchUtils;
 import android.view.View;
 import android.webkit.WebView;
-
-import com.playhaven.src.utils.PHStringUtil;
 
 /**
  * Simple action which "taps" an element *within* a webview.
@@ -21,9 +16,11 @@ import com.playhaven.src.utils.PHStringUtil;
  *
  */
 public class TapWebviewAction extends TapAction implements Action {
-	String mSelector;
 	
-	private WebViewFetcher fetcher;
+	private static final int WAIT_PAGE_RELOAD = 5000;
+	
+	private String mSelector;
+	
 	
 	public static int DEFAULT_WEBVIEW_ELEMENT_WIDTH = 100;
 	public static int DEFAULT_WEBVIEW_ELEMENT_HEIGHT = 100;
@@ -101,20 +98,93 @@ public class TapWebviewAction extends TapAction implements Action {
 	public void doAction(Activity activity, InstrumentationTestCase testCase, View view) {
 		Assert.assertEquals(WebView.class, view.getClass());
 		
-		fetcher = new WebViewFetcher((WebView)view);
+		final WebView webviewF = (WebView)view;
+		RectF elementRect;
+		final WebViewFetcher fetcher = new WebViewFetcher((WebView)webviewF);
 		
-		//TODO: actually send a tap event to the x/y coordinate since we are tapping on elements *within* the view
+		// Note: this code is slightly unsettling.
+		// Basically, there are three steps:
+		// [On Main Thread]
+		// 1. Bind the native js interface
+		// 2. Reload url to enable this interface
+		// [On instrumentation thread]
+		// 1. Wait a few seconds for all callbacks to complete
+		// [On Main Thread]
+		// 1. Run WebViewFetcher framework (block until we get result)
+		// [On Instrumentation thread]
+		// 1. Call method passing in the coordinates
+		//
+		// If death results from staring at this code, Playhaven is absolved from all responsibility
+		try {
+		testCase.runTestOnUiThread(new Runnable() {
+			@Override
+			public void run() {
+				// we have to add the JS interface explicitly (doesn't seem to work WebViewFetcher)
+				// TODO: Note: it appears you can only bind one interface at a time? 
+				webviewF.addJavascriptInterface(fetcher, WebViewFetcher.JS_FRAMEWORK_NAME);
+				
+				// reload page to ensure the native bindings are available (KEY)
+				// TODO: annoying since it might trigger bad side effects. Not many options though..
+				// TODO: Wish we could intercept *before* webview loads
+				webviewF.loadUrl(webviewF.getOriginalUrl()); 
+			}
+		});
+		
+		// wait for reload on instrumentation thread
+		// (empirically tuned)
+		try {
+			Thread.sleep(WAIT_PAGE_RELOAD);
+		} catch (Exception e) { // swallow all exceptions
+			e.printStackTrace();
+			Assert.fail(e.getMessage());
+		}
+			
+		// just in case
+		testCase.getInstrumentation().waitForIdleSync();
+		
+		testCase.runTestOnUiThread(new Runnable() {
+			@Override
+			public void run() {
+				fetcher.attachTestFramework(); // install the JS test framework
+				
+				Assert.assertNotNull(mSelector);
+				
+				RectF elementRect = getViewFrameOnScreen(webviewF, fetcher);
+				 
+				Assert.assertFalse(elementRect.left == Float.MAX_VALUE);
+				Assert.assertFalse(elementRect.top  == Float.MAX_VALUE);
+				
+			}
+		});
+				
+				
+		} catch (Throwable t) {
+			t.printStackTrace(); // swallow all problems
+			Assert.fail(t.getMessage());
+		}
+		
+		// let app catch up..
+		testCase.getInstrumentation().waitForIdleSync();
+		
+		// create a webview wrapper which "fakes" the given touch region
+		WebViewWrapper wrapper = new WebViewWrapper((WebView)view, new RectF());
+		
+		try {
+			TouchUtils.clickView(testCase, wrapper); // touch on the wrapper
+		} catch(Exception e) {
+			Assert.fail("Could not tap: " + e.getMessage());
+			e.printStackTrace();
+		}
 		
 	}
 	
-	protected RectF getViewFrameOnScreen(View view) {
+	protected RectF getViewFrameOnScreen(View view, WebViewFetcher fetcher) {
 		RectF elementFrame = new RectF(Float.MAX_VALUE, 
 				  					   Float.MAX_VALUE, 
 				  					   Float.MAX_VALUE, 
 				  					   Float.MAX_VALUE);
 		
 		if (fetcher == null) return elementFrame;
-		
 		
 		PointF elementLocation = fetcher.getElementLocation(mSelector);
 		
@@ -128,137 +198,6 @@ public class TapWebviewAction extends TapAction implements Action {
 		return elementFrame;
 		
 	}
-	
-	/**
-	 * Simple javascript bridge which allows us to fetch the location
-	 * of an element onscreen so we can send the appropriate touch event.
-	 * 
-	 * @author samstewart
-	 *
-	 */
-	private static class WebViewFetcher {
-		
-		private static final int JS_TIMEOUT = 5000;
-		
-		// atomic state variables for the current element
-		private AtomicInteger x_pos = new AtomicInteger();
-		
-		private AtomicInteger y_pos = new AtomicInteger();
-		
-		private AtomicBoolean isTappable = new AtomicBoolean();
-		
-		private AtomicBoolean testFrameworkExists = new AtomicBoolean();
-		
-		private static final String UI_FRAMEWORK = 
-				"(function(Zepto){\n" + 
-				"    if (Zepto.fn.viewportPosition !== undefined) Hadaly.initTestFramework(true);\n" + 
-				"    Zepto.fn.viewportPosition = function(selector){\n" + 
-				"        if ($(selector).length === 0) return Hadaly.viewportPosition(null, null);\n" + 
-				" \n" + 
-				"        var offset = $(selector).offset();\n" + 
-				"        var tapOffsetX = offset.width /2;\n" + 
-				"        var tapOffsetY = offset.height /2;\n" + 
-				" \n" + 
-				"        Hadaly.viewportPosition(offset.left - window.scrollX + tapOffsetX, offset.top - window.scrollY + tapOffsetY);\n" + 
-				"    }\n" + 
-				"\n" + 
-				"    if (Zepto.fn.isTappable !== undefined) Hadaly.initTestFramework(true);\n" + 
-				"    Zepto.fn.isTappable = function(selector){\n" + 
-				"        if ($(selector).length === 0) return Hadaly.isTappable(false);\n" + 
-				"        \n" + 
-				"        var visible = $(selector).css(\"display\") != \"none\";\n" + 
-				"        var offset = $(selector).offset();\n" + 
-				"        Hadaly.isTappable(visible && offset.left >= 0 && offset.top >= 0 && offset.width > 0 && offset.height > 0)\n" + 
-				"    }\n" +
-				"    Hadaly.initTestFramework(false);\n" +
-				"})($);";
-		
-		private final ConditionVariable blocker = new ConditionVariable();
-		
-		private WebView mWebView;
-		
-		public WebViewFetcher(WebView webview) {
-			mWebView = webview;
-			
-			mWebView.addJavascriptInterface(this, "Hadaly");
-			
-			attachTestFramework();
-		}
 
-		////////////////////////////////////////////
-		//////////// Interface to WebViewFetcher.js ////////
-		
-		private void attachTestFramework() {
-			mWebView.loadUrl("javascript: " + UI_FRAMEWORK);
-		}
-		
-		private void executeJS(String javascript) {
-			if (mWebView == null) return;
-			
-			attachTestFramework();
-			
-			blocker.block();
-			
-			mWebView.loadUrl("javascript: " + javascript);
-			
-			blocker.block();
-		}
-		
-		///////////////////////////////////////////
-		/////// Action Methods ////////////////////
-		
-		public void enterText(String selector, String text) {
-			//TODO: actually enter text in the webview
-			executeJS("Hadaly.log('test')");
-		}
-		
-		public PointF getElementLocation(String selector) {
-			// executeJS("Zepto.fn.isTappable('" + selector + "');");
-			executeJS("Zepto.fn.viewportPosition('" + selector + "');");
-			
-			Assert.assertTrue (isTappable.get());
-			Assert.assertFalse(x_pos.get() >= Integer.MAX_VALUE);
-			Assert.assertFalse(x_pos.get() <= 0);
-			Assert.assertFalse(y_pos.get() >= Integer.MAX_VALUE);
-			Assert.assertFalse(y_pos.get() <= 0);
-			
-			return new PointF(Float.intBitsToFloat(x_pos.get()), 
-							  Float.intBitsToFloat(y_pos.get()));
-		}
-		
-		////////////////////////////////////////////
-		/////////// Callbacks from JS /////////////
-		/////////// Purposely not used locally ////
-		
-		public void viewportPosition(String x, String y) {
-			if (x != null && y != null) {
-				Float xf = Float.parseFloat(x);
-				Float yf = Float.parseFloat(y);
-				PHStringUtil.log("viewport position: " + xf + ", " + yf);
-				
-				x_pos.set(Float.floatToIntBits(xf));
-				y_pos.set(Float.floatToIntBits(yf));
-			} else {
-				x_pos.set(Integer.MAX_VALUE);
-				y_pos.set(Integer.MAX_VALUE);
-			}
-			
-			
-			
-			blocker.open();
-		}
-		
-		public void isTappable(String tappable) {
-			isTappable.set(Boolean.parseBoolean(tappable));
-			
-			blocker.open();
-		}
-		
-		public void initTestFramework(String alreadyExists) {
-			testFrameworkExists.set(Boolean.parseBoolean(alreadyExists));
-			
-			blocker.open();
-		}
-	}
 
 }

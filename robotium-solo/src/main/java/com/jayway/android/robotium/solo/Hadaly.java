@@ -55,7 +55,7 @@ public class Hadaly {
 	
 	protected final int ACTIVITY_WAIT_TIMEOUT = 1000;
 	
-	public final static String LOGGING_TAG = "[Hadaly]";
+	public final static String LOGGING_TAG = "Hadaly";
 	
 	
 
@@ -111,7 +111,14 @@ public class Hadaly {
 	 * @param htmlSelector The selector *within* the WebView's HTML content
 	 */
 	public void tapInWebview(String webviewSelector, String htmlSelector) {
-		// TODO: tap in the webview on the specific element
+		// get the webview first
+		View webview = attemptGetView(webviewSelector);
+		if (webview != null) {
+			// now try to tap an html element
+			Actions.tapWebviewAction(htmlSelector).doAction(mActivityWatcher.getCurrentActivity(), 
+															mTestCase, 
+															webview);
+		}
 	}
 	
 	public void tap(String selector) {
@@ -122,6 +129,7 @@ public class Hadaly {
 	}
 	
 	private View attemptGetView(String selector) {
+		// TODO: should I be running on the activity thread instead of this thread?
 		Assert.assertNotNull(mTestCase);
 		
 		//TODO: needs to timeout if it can't find the element

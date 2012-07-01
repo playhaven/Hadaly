@@ -10,6 +10,10 @@ public class Actions {
 		return new TapAction();
 	}
 	
+	public static TapWebviewAction tapWebviewAction(String elementSelector) {
+		return new TapWebviewAction(elementSelector);
+	}
+	
 	public static TextEntryAction enterTextAction(String text) {
 		return new TextEntryAction(text);
 	}

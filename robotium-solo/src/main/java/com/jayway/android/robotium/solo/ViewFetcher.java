@@ -47,6 +47,8 @@ class ViewFetcher {
 		// getLocationOnScreen
 		// view.isShown()
 		// TODO: should we check to make sure it's shown?
+		// TODO: should we return a list of matched elements?
+		// TODO: if we return list we should use depth first search (preorder)
 		
 		// breadth first search
 		ConcurrentLinkedQueue<View> viewChildren = new ConcurrentLinkedQueue<View>();
