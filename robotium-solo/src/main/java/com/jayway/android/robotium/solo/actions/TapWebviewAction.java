@@ -12,6 +12,7 @@ import android.webkit.WebView;
 
 /**
  * Simple action which "taps" an element *within* a webview.
+ * TODO: a number of interdependencies we should clean up (fetcher)
  * @author samstewart
  *
  */
@@ -21,6 +22,7 @@ public class TapWebviewAction extends TapAction implements Action {
 	
 	private String mSelector;
 	
+	private RectF mElementRect;
 	
 	public static int DEFAULT_WEBVIEW_ELEMENT_WIDTH = 100;
 	public static int DEFAULT_WEBVIEW_ELEMENT_HEIGHT = 100;
@@ -58,34 +60,33 @@ public class TapWebviewAction extends TapAction implements Action {
 			// no padding because we want measuredWidth/Height to match
 			// width/height
 			this.setPadding(0, 0, 0, 0); 
+			
+			// we need to pretend the view's real size is the subregion
+			//TODO: what if the webview has padding?
+			
+			// force the size (don't care about x/y)
+			// We're assuming screen coordinates since we don't have a parent view
+			// we just want the width and height to be equal to the mSubRegion (we get the xy on getLocationOnScreen)
+			// We know that width = right - left = subRegionWidth - 0 = subRegionWidth
+			// and we know height = bottom - top = subRegionHeight - 0 = subRegionHeight
+			layout(0, 0, 
+				   (int)mSubRegion.width(), (int)mSubRegion.height());
 		}
 		
 		@Override
 		public void getLocationOnScreen(int[] xy) {
 			int[] totalXY = new int[2];
 			
-			super.getLocationOnScreen(totalXY);
+			mWebview.getLocationOnScreen(totalXY);
 			
 			// add the sub region offset
 			totalXY[0] += mSubRegion.left;
 			totalXY[1] += mSubRegion.top;
+			
+			xy[0] = totalXY[0];
+			xy[1] = totalXY[1];
 		}
 		
-		@Override
-		public void onMeasure(int widthMeasure, int heightMeasure) {
-			// we need to pretend the view's real size is the subregion
-			
-			int totalWidth = super.getWidth();
-			// shrink down to subregion (both sides of subregion)
-			totalWidth = totalWidth - (int)mSubRegion.left - (int)mSubRegion.width();
-			
-			int totalHeight = super.getHeight();
-			// shrink down to subregion (both top and bottom of subregion)
-			totalHeight = totalHeight - (int)mSubRegion.top - (int)mSubRegion.height();
-			
-			
-			setMeasuredDimension(totalWidth, totalHeight);
-		}
 		
 	}
 	@Override
@@ -99,7 +100,7 @@ public class TapWebviewAction extends TapAction implements Action {
 		Assert.assertEquals(WebView.class, view.getClass());
 		
 		final WebView webviewF = (WebView)view;
-		RectF elementRect;
+		mElementRect = null; // reset
 		final WebViewFetcher fetcher = new WebViewFetcher((WebView)webviewF);
 		
 		// Note: this code is slightly unsettling.
@@ -154,10 +155,9 @@ public class TapWebviewAction extends TapAction implements Action {
 				Assert.assertFalse(elementRect.left == Float.MAX_VALUE);
 				Assert.assertFalse(elementRect.top  == Float.MAX_VALUE);
 				
+				setElementRect(elementRect);
 			}
 		});
-				
-				
 		} catch (Throwable t) {
 			t.printStackTrace(); // swallow all problems
 			Assert.fail(t.getMessage());
@@ -166,16 +166,30 @@ public class TapWebviewAction extends TapAction implements Action {
 		// let app catch up..
 		testCase.getInstrumentation().waitForIdleSync();
 		
-		// create a webview wrapper which "fakes" the given touch region
-		WebViewWrapper wrapper = new WebViewWrapper((WebView)view, new RectF());
+		Assert.assertNotNull(mElementRect);
 		
-		try {
-			TouchUtils.clickView(testCase, wrapper); // touch on the wrapper
+		// create a webview wrapper which "fakes" the given touch region
+		// TODO: should be synchronized access to mElementRect?
+		WebViewWrapper wrapper = new WebViewWrapper(webviewF, mElementRect);
+		
+		try {		
+			TouchUtils.clickView(testCase, wrapper); // touch on the wrapper (which has the underlying webview)
 		} catch(Exception e) {
 			Assert.fail("Could not tap: " + e.getMessage());
 			e.printStackTrace();
 		}
 		
+		try {
+			Thread.sleep(3000);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		
+	}
+	
+	protected void setElementRect(RectF rect) {
+		// TODO: should we be synchronizing this?
+		mElementRect = rect;
 	}
 	
 	protected RectF getViewFrameOnScreen(View view, WebViewFetcher fetcher) {
@@ -191,10 +205,11 @@ public class TapWebviewAction extends TapAction implements Action {
 		Assert.assertFalse(elementLocation.x == Float.MAX_VALUE);
 		Assert.assertFalse(elementLocation.y == Float.MAX_VALUE);
 		
+		// TODO: should we use the real device element width?
 		elementFrame = new RectF(elementLocation.x, 
 								 elementLocation.y, 
-								 DEFAULT_WEBVIEW_ELEMENT_WIDTH, 
-								 DEFAULT_WEBVIEW_ELEMENT_HEIGHT);
+								 elementLocation.x + DEFAULT_WEBVIEW_ELEMENT_WIDTH, 
+								 elementLocation.y + DEFAULT_WEBVIEW_ELEMENT_HEIGHT);
 		return elementFrame;
 		
 	}

@@ -23,7 +23,7 @@ import com.jayway.android.robotium.solo.Hadaly;
  */
 public class ActivityWatcher {
 	
-	private Stack<Activity> mActivityHistory;
+	private Stack<Activity> mActivityHistory; // TODO: might be potential memory leak?
 	
 	private ActivityMonitor mActivityMonitor;
 	
@@ -36,27 +36,44 @@ public class ActivityWatcher {
 	private TimerTask		mActivityRefresh = new TimerTask() {
 		@Override
 		public void run() {
-			
-			Activity lastActivity = mActivityMonitor.getLastActivity();
-			
-			if (lastActivity == null) return;
-			
-			synchronized (mActivityHistory) {
-				// if the activity is closing or no longer the root, kill it
-				// we have to check *before* seeing if it's already added
-				if (lastActivity.isFinishing()) {
-					mActivityHistory.remove(lastActivity);
-					return;
-				}
+			synchronized (mActivityMonitor) {
 				
-				if (activityAlreadyAdded(lastActivity)) return; // same as current activity
+				synchronized (mActivityHistory) {					
+					// what if any of our activities are finishing? Kill em'
+					for (Activity activity : mActivityHistory) {
+						if (activity.isFinishing()) {
+							mActivityHistory.remove(activity);
+							return;
+						}
+							
+					}
+					
+					// running on a background thread remember!
+					Activity lastActivity = mActivityMonitor.getLastActivity();
+					
+					if (lastActivity == null) return;
+					
+					if (activityAlreadyAdded(lastActivity)) return; // same as current activity
 
-				// if none of the others, it must be a brand new activity, add it.
-				mActivityHistory.push(lastActivity);
+					// if none of the others, it must be a brand new activity, add it.
+					mActivityHistory.push(lastActivity);
+				}
 			}
+			
+
 		}
 	};
 	
+	public void tearDown() {
+		mActivityHistory.clear();
+		mActivityRefresh.cancel(); 
+		mActivityRefresh = null;
+		
+		mActivityWatcherPump.cancel();
+		mActivityWatcherPump = null;
+		
+				
+	}
 	private boolean activityAlreadyAdded(Activity activity) {
 		return mActivityHistory.contains(activity); // check the entire stack
 	}
@@ -76,7 +93,9 @@ public class ActivityWatcher {
 	
 	
 	public synchronized Activity getCurrentActivity() {
-		return mActivityHistory.peek();
+		synchronized (mActivityHistory) {
+			return (mActivityHistory.empty() ? null : mActivityHistory.peek());
+		}
 	}
 	
 	public synchronized Activity getInitialActivity() {
@@ -106,7 +125,10 @@ public class ActivityWatcher {
 		
 		if (activityAlreadyAdded(newActivity)) return;
 		
-		mActivityHistory.push(newActivity);
+		synchronized (mActivityHistory) {
+			mActivityHistory.push(newActivity);
+		}
+		
 	}
 	
 	public void sleep(int time) {
@@ -120,21 +142,26 @@ public class ActivityWatcher {
 	}
 	
 	public synchronized void closeCurrentActivity() {
-		if (mActivityHistory.peek() == null) return;
-		
-		mActivityHistory.pop().finish();
-		
-		// sleep for a few seconds to let the system catch up
-		sleep(600);
+		synchronized (mActivityHistory) {
+			if (mActivityHistory.empty()) return;;
+			
+			mActivityHistory.pop().finish();
+			
+			// sleep for a few seconds to let the system catch up
+			sleep(600);
+		}
 	}
 	
 	public synchronized void closeAllActivities() {
-		while (mActivityHistory.peek() != null) {
+		while ( ! mActivityHistory.empty()) {
 			closeCurrentActivity();
 		}
 	}
 	
 	public synchronized void assertActivityShowing(Class<? extends Activity> activityClass) {
-		Assert.assertEquals(activityClass, getCurrentActivity().getClass());
+		synchronized (mActivityHistory) {
+			Assert.assertEquals(activityClass, getCurrentActivity().getClass());
+		}
+		
 	}
 }

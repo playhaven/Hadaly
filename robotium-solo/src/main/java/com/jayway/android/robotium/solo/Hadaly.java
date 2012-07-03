@@ -95,10 +95,10 @@ public class Hadaly {
 		}
 	}
 	
-	public void tearDown() {
+	
+	public void closeAllActivities() {
 		mActivityWatcher.closeAllActivities();
 	}
-	
 	
 	public void closeCurrentActivity() {
 		mActivityWatcher.closeCurrentActivity();
@@ -184,6 +184,10 @@ public class Hadaly {
 		Assert.assertNotNull(mScreenshotter);
 		
 		mScreenshotter.takeScreenshot(mActivityWatcher.getCurrentActivity());
+	}
+	
+	public void tearDown() {
+		mActivityWatcher.tearDown(); // ensure no memory leaks
 	}
 	
 }

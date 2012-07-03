@@ -16,6 +16,16 @@ import com.playhaven.src.utils.PHStringUtil;
  * of an element onscreen so we can send the appropriate touch event.
  * 
  * Used only by TapWebviewAction (we had to break it out into a separate class)
+ * 
+ * TODO: the HTML template must have the appropriate viewport tag to appropriately
+ * scale the content so that we get the proper screen coordinates. Currently we perform the scaling
+ * manually but this might cause problems if the user decides to set a viewport <meta> tag.
+ * Thoughts?
+ * 
+ * Helpful Links:
+ * http://www.flynsarmy.com/2011/08/how-to-fix-strange-web-page-widths-on-android-browser/
+ * http://stackoverflow.com/questions/2796814/how-do-i-get-the-wvga-android-browser-to-stop-scaling-my-images/2799580
+ * http://stackoverflow.com/questions/8628860/android-webview-javascript-screen-dimensions-vs-actual-screen-dimensions
  * @author samstewart
  *
  */
@@ -48,10 +58,7 @@ public class WebViewFetcher {
 			"        if ($(selector).length === 0) return Hadaly.viewportPosition(null, null);\n" + 
 			" \n" + 
 			"        var offset = $(selector).offset();\n" + 
-			"        var tapOffsetX = $(selector).width() / 2.0;\n" + 
-			"        var tapOffsetY = $(selector).height() / 2.0;\n" + 
-			" \n" + 
-			"        Hadaly.viewportPosition(offset.left - window.scrollX + tapOffsetX, offset.top - window.scrollY + tapOffsetY);\n" +
+			"        Hadaly.viewportPosition((offset.left - window.scrollX) * window.devicePixelRatio, (offset.top - window.scrollY) * window.devicePixelRatio);\n" +		
 			"    }\n" + 
 			"\n" + 
 			"    if (Zepto.fn.isTappable !== undefined) {\n" +
@@ -89,6 +96,7 @@ public class WebViewFetcher {
 		
 		mWebView.loadUrl("javascript: " + javascript);
 		
+		blocker.close(); // reset
 		
 		// wait until we get a JS callback
 		blocker.block(JS_TIMEOUT);
