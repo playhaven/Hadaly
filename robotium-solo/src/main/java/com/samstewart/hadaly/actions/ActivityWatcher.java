@@ -1,4 +1,4 @@
-package com.jayway.android.robotium.solo.actions;
+package com.samstewart.hadaly.actions;
 
 import java.util.Stack;
 import java.util.Timer;
@@ -10,7 +10,7 @@ import android.app.Instrumentation;
 import android.app.Instrumentation.ActivityMonitor;
 import android.content.IntentFilter;
 
-import com.jayway.android.robotium.solo.Hadaly;
+import com.samstewart.hadaly.Hadaly;
 
 /**
  * Monitors the current activity and history stack.

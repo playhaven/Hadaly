@@ -1,4 +1,4 @@
-package com.jayway.android.robotium.solo;
+package com.samstewart.hadaly;
 
 import java.util.ArrayList;
 import java.util.Arrays;

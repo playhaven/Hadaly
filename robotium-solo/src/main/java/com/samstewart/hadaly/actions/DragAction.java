@@ -1,4 +1,4 @@
-package com.jayway.android.robotium.solo.actions;
+package com.samstewart.hadaly.actions;
 
 import android.app.Activity;
 import android.graphics.PointF;
@@ -6,11 +6,13 @@ import android.test.InstrumentationTestCase;
 import android.view.View;
 
 /**
- * Simple scroll action on a scrollview
+ * Simple drag action on a view.
+ * @author samstewart
+ *
  */
-public class ScrollAction implements Action {
+public class DragAction implements Action {
 
-	public ScrollAction(PointF scrollStart, PointF scrollEnd) {
+	public DragAction(PointF fromPoint, PointF toPoint) {
 		
 	}
 	
@@ -22,9 +24,8 @@ public class ScrollAction implements Action {
 
 	@Override
 	public void doAction(Activity activity, InstrumentationTestCase testCase, View view) {
-		// TODO Auto-generated method stub
-		// view.setSelection(lineToMoveTo);
-		// .scrollBy, .smoothScrollBy
+		// TODO Actually perform a drag motion on the view
+
 	}
 
 }

@@ -1,4 +1,4 @@
-package com.jayway.android.robotium.solo.actions;
+package com.samstewart.hadaly.actions;
 
 import junit.framework.Assert;
 import android.app.Activity;
@@ -168,7 +168,8 @@ public class TapWebviewAction extends TapAction implements Action {
 		
 		Assert.assertNotNull(mElementRect);
 		
-		// create a webview wrapper which "fakes" the given touch region
+		// create a webview wrapper which "fakes" the given touch region so we can "click"
+		// on it with TouchUtils.clickView
 		// TODO: should be synchronized access to mElementRect?
 		WebViewWrapper wrapper = new WebViewWrapper(webviewF, mElementRect);
 		

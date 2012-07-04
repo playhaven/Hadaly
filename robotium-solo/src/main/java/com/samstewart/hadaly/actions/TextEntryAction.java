@@ -1,4 +1,4 @@
-package com.jayway.android.robotium.solo.actions;
+package com.samstewart.hadaly.actions;
 
 import junit.framework.Assert;
 import android.app.Activity;

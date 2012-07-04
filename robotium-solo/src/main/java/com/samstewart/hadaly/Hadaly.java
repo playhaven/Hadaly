@@ -1,4 +1,4 @@
-package com.jayway.android.robotium.solo;
+package com.samstewart.hadaly;
 
 import junit.framework.Assert;
 import android.app.Activity;
@@ -6,8 +6,8 @@ import android.test.InstrumentationTestCase;
 import android.view.KeyEvent;
 import android.view.View;
 
-import com.jayway.android.robotium.solo.actions.Actions;
-import com.jayway.android.robotium.solo.actions.ActivityWatcher;
+import com.samstewart.hadaly.actions.Actions;
+import com.samstewart.hadaly.actions.ActivityWatcher;
 
 /**
  * Main utility class for running UI tests.
