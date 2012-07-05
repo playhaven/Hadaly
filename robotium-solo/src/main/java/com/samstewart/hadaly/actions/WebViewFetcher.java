@@ -47,6 +47,8 @@ public class WebViewFetcher {
 	
 	private AtomicBoolean testFrameworkExists = new AtomicBoolean();
 	
+	public static final int ELEMENT_NOT_FOUND = -1;
+	
 	// TODO: use JS_FRAMEWORK_NAME instead of Hadaly inline
 	private static final String UI_FRAMEWORK = 
 			"(function(Zepto) {\n" + 
@@ -117,11 +119,7 @@ public class WebViewFetcher {
 	public PointF getElementLocation(String selector) {
 		executeJS("$.fn.viewportPosition('" + selector + "');");
 		
-		// TODO: Assert.assertTrue (isTappable.get());
-		Assert.assertFalse(x_pos.get() >= Integer.MAX_VALUE);
-		Assert.assertFalse(x_pos.get() <= 0);
-		Assert.assertFalse(y_pos.get() >= Integer.MAX_VALUE);
-		Assert.assertFalse(y_pos.get() <= 0);
+		// will block for a bit
 		
 		return new PointF(Float.intBitsToFloat(x_pos.get()), 
 						  Float.intBitsToFloat(y_pos.get()));
@@ -140,8 +138,8 @@ public class WebViewFetcher {
 			x_pos.set(Float.floatToIntBits(xf));
 			y_pos.set(Float.floatToIntBits(yf));
 		} else {
-			x_pos.set(Integer.MAX_VALUE);
-			y_pos.set(Integer.MAX_VALUE);
+			x_pos.set(Float.floatToIntBits(ELEMENT_NOT_FOUND));
+			y_pos.set(Float.floatToIntBits(ELEMENT_NOT_FOUND));
 		}
 		
 		didReceiveJSCallback.set(true);

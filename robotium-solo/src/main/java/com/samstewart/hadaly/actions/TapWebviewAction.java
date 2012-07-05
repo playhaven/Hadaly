@@ -1,5 +1,7 @@
 package com.samstewart.hadaly.actions;
 
+import com.playhaven.src.publishersdk.content.PHContentView;
+
 import junit.framework.Assert;
 import android.app.Activity;
 import android.content.Context;
@@ -18,7 +20,9 @@ import android.webkit.WebView;
  */
 public class TapWebviewAction extends TapAction implements Action {
 	
-	private static final int WAIT_PAGE_RELOAD = 5000;
+	private static final int WAIT_PAGE_RELOAD = 2000;
+	
+	private static final int WAIT_PROTOCOL_SET = 200;
 	
 	private String mSelector;
 	
@@ -103,6 +107,9 @@ public class TapWebviewAction extends TapAction implements Action {
 		mElementRect = null; // reset
 		final WebViewFetcher fetcher = new WebViewFetcher((WebView)webviewF);
 		
+		// Note: [!] DO NOT MAKE ANY ASSERTIONS WHILE ON THE UI THREAD! 
+		// THEY WILL BE CAUGHT AS EXCEPTIONS AND LITTLE INFORMATION WILL BE PASSED UP
+		
 		// Note: this code is slightly unsettling.
 		// Basically, there are three steps:
 		// [On Main Thread]
@@ -128,6 +135,7 @@ public class TapWebviewAction extends TapAction implements Action {
 				// TODO: annoying since it might trigger bad side effects. Not many options though..
 				// TODO: Wish we could intercept *before* webview loads
 				webviewF.loadUrl(webviewF.getOriginalUrl()); 
+				
 			}
 		});
 		
@@ -143,17 +151,33 @@ public class TapWebviewAction extends TapAction implements Action {
 		// just in case
 		testCase.getInstrumentation().waitForIdleSync();
 		
+		// now set the protocol version again
+		testCase.runTestOnUiThread(new Runnable() {
+			@Override
+			public void run() {
+				PHContentView.setWebviewProtocolVersion(webviewF);
+			}
+		});
+		
+		// just in case
+		testCase.getInstrumentation().waitForIdleSync();
+				
+		// wait for the protocol to set
+		try {
+			Thread.sleep(WAIT_PROTOCOL_SET);
+		} catch (Exception e) { // swallow all exceptions
+			e.printStackTrace();
+			Assert.fail(e.getMessage());
+		}
+		
+		Assert.assertNotNull(mSelector);
+		
 		testCase.runTestOnUiThread(new Runnable() {
 			@Override
 			public void run() {
 				fetcher.attachTestFramework(); // install the JS test framework
 				
-				Assert.assertNotNull(mSelector);
-				
 				RectF elementRect = getViewFrameOnScreen(webviewF, fetcher);
-				 
-				Assert.assertFalse(elementRect.left == Float.MAX_VALUE);
-				Assert.assertFalse(elementRect.top  == Float.MAX_VALUE);
 				
 				setElementRect(elementRect);
 			}
@@ -167,6 +191,12 @@ public class TapWebviewAction extends TapAction implements Action {
 		testCase.getInstrumentation().waitForIdleSync();
 		
 		Assert.assertNotNull(mElementRect);
+		
+		if (mElementRect.left == WebViewFetcher.ELEMENT_NOT_FOUND ||
+			mElementRect.top  == WebViewFetcher.ELEMENT_NOT_FOUND   ) {
+			Assert.fail("Could not find HTML element for selector '" + mSelector + "'");
+		}
+		
 		
 		// create a webview wrapper which "fakes" the given touch region so we can "click"
 		// on it with TouchUtils.clickView
@@ -194,23 +224,13 @@ public class TapWebviewAction extends TapAction implements Action {
 	}
 	
 	protected RectF getViewFrameOnScreen(View view, WebViewFetcher fetcher) {
-		RectF elementFrame = new RectF(Float.MAX_VALUE, 
-				  					   Float.MAX_VALUE, 
-				  					   Float.MAX_VALUE, 
-				  					   Float.MAX_VALUE);
-		
-		if (fetcher == null) return elementFrame;
-		
 		PointF elementLocation = fetcher.getElementLocation(mSelector);
 		
-		Assert.assertFalse(elementLocation.x == Float.MAX_VALUE);
-		Assert.assertFalse(elementLocation.y == Float.MAX_VALUE);
-		
 		// TODO: should we use the real device element width?
-		elementFrame = new RectF(elementLocation.x, 
-								 elementLocation.y, 
-								 elementLocation.x + DEFAULT_WEBVIEW_ELEMENT_WIDTH, 
-								 elementLocation.y + DEFAULT_WEBVIEW_ELEMENT_HEIGHT);
+		RectF elementFrame = new RectF(elementLocation.x, 
+									   elementLocation.y, 
+									   elementLocation.x + DEFAULT_WEBVIEW_ELEMENT_WIDTH, 
+									   elementLocation.y + DEFAULT_WEBVIEW_ELEMENT_HEIGHT);
 		return elementFrame;
 		
 	}
