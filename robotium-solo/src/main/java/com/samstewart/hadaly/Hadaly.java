@@ -57,8 +57,6 @@ public class Hadaly {
 	
 	public final static String LOGGING_TAG = "Hadaly";
 	
-	
-
 	public Hadaly(InstrumentationTestCase testCase, Activity activity) {
         mTestCase = testCase;
         mViewSearcher 	 = new ViewFetcher(activity);
@@ -85,9 +83,7 @@ public class Hadaly {
 		Assert.assertNotNull(mTestCase);
 		
 		try {
-			sleep(mWaitTime);
-			
-			Actions.sendKeycodeAction(KeyEvent.KEYCODE_BACK).doAction(mActivityWatcher.getRootActivity(), mTestCase, null);
+			Actions.sendKeycodeAction(KeyEvent.KEYCODE_BACK).doAction(null, mTestCase, null);
 			
 			sleep(mWaitTime);
 		} catch (Exception e) {

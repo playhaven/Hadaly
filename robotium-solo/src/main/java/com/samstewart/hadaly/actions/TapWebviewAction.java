@@ -29,6 +29,7 @@ public class TapWebviewAction extends TapAction implements Action {
 	private RectF mElementRect;
 	
 	public static int DEFAULT_WEBVIEW_ELEMENT_WIDTH = 100;
+	
 	public static int DEFAULT_WEBVIEW_ELEMENT_HEIGHT = 100;
 	
 	public TapWebviewAction(String selector) {
