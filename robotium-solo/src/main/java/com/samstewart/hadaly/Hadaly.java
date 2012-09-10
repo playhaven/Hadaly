@@ -2,9 +2,12 @@ package com.samstewart.hadaly;
 
 import junit.framework.Assert;
 import android.app.Activity;
+import android.content.Context;
 import android.test.InstrumentationTestCase;
 import android.view.KeyEvent;
 import android.view.View;
+import android.view.inputmethod.InputMethodManager;
+import android.webkit.WebView;
 
 import com.samstewart.hadaly.actions.Actions;
 import com.samstewart.hadaly.actions.ActivityWatcher;
@@ -115,6 +118,31 @@ public class Hadaly {
 															mTestCase, 
 															webview);
 		}
+	}
+	
+	public WebViewWrapper getWebViewWrapper(String webviewSelector) {
+        View webview = attemptGetView(webviewSelector);
+        if (webview != null) {
+            WebViewWrapper wrapper = new WebViewWrapper((WebView) webview, mTestCase);
+            return wrapper;
+        }
+        
+        return null;
+	}
+	
+	// TODO: remove method
+	public void fillOutForm(WebViewWrapper wrapper, String[] selectors, String[] values, String submit) {
+	    Assert.assertEquals(selectors.length, values.length);
+
+        // Scroll to the bottom of the page, just in case. We should then have our input fields visible.
+        // TODO: in the future, we could add a more complex way of scrolling around if the page is long
+        wrapper.scrollDown(true);
+        
+        for (int i = 0; i < selectors.length; ++ i) {
+            wrapper.inputText(selectors[i], values[i]);
+        }
+        
+        wrapper.tapOnElement(selectors[0]);
 	}
 	
 	public void tap(String selector) {
