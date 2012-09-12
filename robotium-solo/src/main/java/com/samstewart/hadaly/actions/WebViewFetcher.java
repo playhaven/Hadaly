@@ -2,6 +2,7 @@ package com.samstewart.hadaly.actions;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 import junit.framework.Assert;
 import android.graphics.PointF;
@@ -47,6 +48,8 @@ public class WebViewFetcher {
 	
 	private AtomicBoolean testFrameworkExists = new AtomicBoolean();
 	
+	private AtomicReference<String> text = new AtomicReference<String>();
+	
 	public static final int ELEMENT_NOT_FOUND = -1;
 	
 	// TODO: use JS_FRAMEWORK_NAME instead of Hadaly inline
@@ -67,6 +70,11 @@ public class WebViewFetcher {
 			"		Hadaly.initTestFramework(true);\n" +
 			"		return;\n" +
 			"	 }\n" +
+            "\n" +
+			"    Zepto.fn.getText = function(selector){\n" +
+			"        return Hadaly.getTextCallback($(selector).text());\n" +
+			"    }\n" +
+            "\n" +
 			"    Zepto.fn.isTappable = function(selector){\n" + 
 			"        if ($(selector).length === 0) return Hadaly.isTappable(false);\n" + 
 			"        \n" + 
@@ -125,6 +133,12 @@ public class WebViewFetcher {
 						  Float.intBitsToFloat(y_pos.get()));
 	}
 	
+	public String getText(String selector) {
+	    executeJS("$.fn.getText('" + selector + "');");
+	    
+	    return text.get();
+	}
+	
 	////////////////////////////////////////////
 	/////////// Callbacks from JS /////////////
 	/////////// Purposely not used locally ////
@@ -146,6 +160,13 @@ public class WebViewFetcher {
 		
 		blocker.open();
 	}
+	
+	public void getTextCallback(String result) {
+        text.set(result);
+        
+        didReceiveJSCallback.set(true);
+        blocker.open();
+    }
 	
 	public void isTappable(String tappable) {
 		isTappable.set(Boolean.parseBoolean(tappable));

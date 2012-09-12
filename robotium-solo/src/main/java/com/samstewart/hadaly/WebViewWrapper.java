@@ -144,25 +144,17 @@ public class WebViewWrapper {
         WebViewRegion region = new WebViewRegion(mWebView, mElement);
         
         try {
-            PHStringUtil.log("[DEBUG] tapping screen");
             TouchUtils.clickView(mTestCase, region); // touch on the wrapper (which has the underlying webview)
         } catch(Exception e) {
             Assert.fail("Could not tap: " + e.getMessage());
             e.printStackTrace();
         }
 
-/*        if (doubleTap) {
-            PHStringUtil.log("[DEBUG] tapping screen again");
-            tapOnElement(selector, false);
-        } else {*/
-            try {
-                Thread.sleep(WAIT_BREAK);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-            
-//            PHStringUtil.log("[DEBUG] tapping done!");
-//        }
+        try {
+            Thread.sleep(WAIT_BREAK);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
     
     public void inputText(String selector, String text) {
@@ -176,6 +168,10 @@ public class WebViewWrapper {
             e.printStackTrace();
         }
     }
+    
+    public String getText(String selector) {
+        return mFetcher.getText(selector);
+    }
 
     public void closeSoftKeyboard() {
         InputMethodManager imm = 
@@ -183,8 +179,6 @@ public class WebViewWrapper {
                                         .getInstrumentation()
                                         .getTargetContext()
                                         .getSystemService(Context.INPUT_METHOD_SERVICE);
-        
-        PHStringUtil.log("[DEBUG] closing soft keyboard");
         imm.hideSoftInputFromWindow(mWebView.getWindowToken(), 0);
     }
     
