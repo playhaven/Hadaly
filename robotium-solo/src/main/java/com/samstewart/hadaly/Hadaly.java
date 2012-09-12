@@ -130,21 +130,6 @@ public class Hadaly {
         return null;
 	}
 	
-	// TODO: remove method
-	public void fillOutForm(WebViewWrapper wrapper, String[] selectors, String[] values, String submit) {
-	    Assert.assertEquals(selectors.length, values.length);
-
-        // Scroll to the bottom of the page, just in case. We should then have our input fields visible.
-        // TODO: in the future, we could add a more complex way of scrolling around if the page is long
-        wrapper.scrollDown(true);
-        
-        for (int i = 0; i < selectors.length; ++ i) {
-            wrapper.inputText(selectors[i], values[i]);
-        }
-        
-        wrapper.tapOnElement(selectors[0]);
-	}
-	
 	public void tap(String selector) {
 		View view = attemptGetView(selector);
 		
