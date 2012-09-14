@@ -2,11 +2,9 @@ package com.samstewart.hadaly;
 
 import junit.framework.Assert;
 import android.app.Activity;
-import android.content.Context;
 import android.test.InstrumentationTestCase;
 import android.view.KeyEvent;
 import android.view.View;
-import android.view.inputmethod.InputMethodManager;
 import android.webkit.WebView;
 
 import com.samstewart.hadaly.actions.Actions;

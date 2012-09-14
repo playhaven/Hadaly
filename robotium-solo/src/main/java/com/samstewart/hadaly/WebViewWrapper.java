@@ -11,7 +11,6 @@ import android.view.inputmethod.InputMethodManager;
 import android.webkit.WebView;
 
 import com.playhaven.src.publishersdk.content.PHContentView;
-import com.playhaven.src.utils.PHStringUtil;
 import com.samstewart.hadaly.actions.WebViewFetcher;
 
 public class WebViewWrapper {
