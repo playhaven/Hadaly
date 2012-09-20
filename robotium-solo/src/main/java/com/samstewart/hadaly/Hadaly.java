@@ -5,6 +5,7 @@ import android.app.Activity;
 import android.test.InstrumentationTestCase;
 import android.view.KeyEvent;
 import android.view.View;
+import android.webkit.WebView;
 
 import com.samstewart.hadaly.actions.Actions;
 import com.samstewart.hadaly.actions.ActivityWatcher;
@@ -115,6 +116,16 @@ public class Hadaly {
 															mTestCase, 
 															webview);
 		}
+	}
+	
+	public WebViewWrapper getWebViewWrapper(String webviewSelector) {
+        View webview = attemptGetView(webviewSelector);
+        if (webview != null) {
+            WebViewWrapper wrapper = new WebViewWrapper((WebView) webview, mTestCase);
+            return wrapper;
+        }
+        
+        return null;
 	}
 	
 	public void tap(String selector) {
