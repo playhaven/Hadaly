@@ -21,8 +21,8 @@ public class WebViewWrapper {
     
     private static final int WAIT_BREAK = 1000;
     
-    public static int DEFAULT_WEBVIEW_ELEMENT_WIDTH = 100;
-    public static int DEFAULT_WEBVIEW_ELEMENT_HEIGHT = 100;
+    public static int DEFAULT_WEBVIEW_ELEMENT_WIDTH = 50;
+    public static int DEFAULT_WEBVIEW_ELEMENT_HEIGHT = 50;
     
     private WebView mWebView;
     private InstrumentationTestCase mTestCase;
